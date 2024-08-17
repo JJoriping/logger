@@ -24,7 +24,10 @@ export function interpolate(chunk:TemplateStringsArray, args:any[]):string{
 export function getTerminalLength(value:string):number{
   return value.replace(/\x1B\[.+?m/g, "").length;
 }
-function toCologString(
+export function isTemplateStringsArray(target:unknown):target is TemplateStringsArray{
+  return Object.isFrozen(target) && Array.isArray(target) && 'raw' in target && Array.isArray(target.raw);
+}
+export function toCologString(
   object:any,
   context:CologContext = { circularMap: new Map(), stack: [] }
 ):string{

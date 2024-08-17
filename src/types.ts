@@ -1,4 +1,4 @@
-export const enum LogLevel{
+export enum LogLevel{
   VERBOSE,
   INFO,
   SUCCESS,
@@ -6,11 +6,12 @@ export const enum LogLevel{
   ERROR
 }
 export type LoggerOptions = {
+  'headings': Record<LogLevel, string>,
   'colored': boolean,
   'indent': number
 };
 
-export const enum CologStyle{
+export enum CologStyle{
   DEFAULT,
   BOLD,
   DIMMED,
