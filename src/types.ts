@@ -6,13 +6,15 @@ export const enum LogLevel{
   ERROR
 }
 export type LoggerOptions = {
-  colored?: boolean
+  'colored': boolean,
+  'indent': number
 };
 
 export const enum CologStyle{
   DEFAULT,
   BOLD,
-  ITALIC = 3,
+  DIMMED,
+  ITALIC,
   UNDERLINE,
   BLACK = 30,
   RED,
@@ -29,5 +31,21 @@ export const enum CologStyle{
   BG_BLUE,
   BG_MAGENTA,
   BG_CYAN,
-  BG_WHITE
+  BG_WHITE,
+  L_BLACK = 90,
+  L_RED,
+  L_GREEN,
+  L_YELLOW,
+  L_BLUE,
+  L_MAGENTA,
+  L_CYAN,
+  L_WHITE,
+  BG_L_BLACK = 100,
+  BG_L_RED,
+  BG_L_GREEN,
+  BG_L_YELLOW,
+  BG_L_BLUE,
+  BG_L_MAGENTA,
+  BG_L_CYAN,
+  BG_L_WHITE
 }
