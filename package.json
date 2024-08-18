@@ -1,12 +1,17 @@
 {
   "name": "@daldalso/logger",
   "description": "Fancy logging library using tagged template literal",
-  "version": "0.8.0-beta.1",
+  "version": "0.8.0-beta.2",
   "packageManager": "yarn@4.4.0",
   "scripts": {
     "watch": "tsc -w",
     "build": "tsc"
   },
+  "files": [
+    "/LICENSE",
+    "/README.md",
+    "/dist/"
+  ],
   "main": "./dist/index.js",
   "devDependencies": {
     "@daldalso/eslint-plugin": "^1.2.3",
