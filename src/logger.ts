@@ -1,9 +1,11 @@
 import col, { CologInterpolator } from "./colog";
+import toCologString, { CologContext } from "./to-colog-string";
 import type { LoggerOptions } from "./types";
 import { LogLevel } from "./types";
-import { getTerminalLength, interpolate, isTemplateStringsArray, toCologString } from "./utilities";
+import { getTerminalLength, isTemplateStringsArray } from "./utilities";
 
 type LogFunction = (...args:any[]) => Record<string, LogFunction>;
+
 const decorationColors:Record<LogLevel, CologInterpolator> = {
   [LogLevel.VERBOSE]: col.lBlack,
   [LogLevel.INFO]: col.lBlack,
@@ -63,6 +65,7 @@ export default class Logger{
     const header = `${this.options.headings[level]} ${decorationColors[level]`${new Date().toJSON()}`} `;
     if(!isTemplateStringsArray(template)){
       ((_:TemplateStringsArray) => {
+        if(!args.length) args.push(col.lBlack`(empty)`);
         if(continuous === undefined){
           for(let i = 0; i < args.length; i++){
             this.log(level, [ _, args[i] ], i ? `#${i + 1}` : null);
@@ -73,25 +76,72 @@ export default class Logger{
       })``;
       return;
     }
-    const payload = interpolate(template, rest).split("\n");
-    const R:string[] = [];
-
-    for(let i = 0; i < payload.length; i++){
-      if(i){
-        const underrowHeader = decorationColors[level]`${(i + 1).toString()} │ `;
-        const padding = Math.max(0, this.options.indent - getTerminalLength(underrowHeader));
-
-        R.push(" ".repeat(padding) + underrowHeader + payload[i]);
-      }else if(continuous){
-        const underrowHeader = col.bold`${continuous}` + decorationColors[level]` ┼ `;
-        const padding = Math.max(0, this.options.indent - getTerminalLength(underrowHeader));
-
-        R.push(" ".repeat(padding) + underrowHeader + payload[i]);
-      }else{
-        R.push(header + payload[i]);
+    const promiseMap = new Map<Promise<unknown>, string>();
+    let chunk = "";
+    for(let i = 0; i < template.length; i++){
+      if(i in template) chunk += template[i];
+      if(i in rest){
+        chunk += toCologString(rest[i], { circularMap: new Map(), stack: [], promiseMap });
       }
     }
-    console.log(R.join('\n'));
+    const render = () => {
+      const payload = chunk.split("\n");
+      const R:string[] = [];
+  
+      for(let i = 0; i < payload.length; i++){
+        if(i){
+          const underrowHeader = decorationColors[level]`${(i + 1).toString()} │ `;
+          const padding = Math.max(0, this.options.indent - getTerminalLength(underrowHeader));
+  
+          R.push(" ".repeat(padding) + underrowHeader + payload[i]);
+        }else if(continuous){
+          let actualContinuous = continuous;
+          if(actualContinuous.length + 5 > this.options.indent){
+            actualContinuous = actualContinuous.slice(0, this.options.indent - 6) + "…";
+          }
+          const underrowHeader = col.bold`${actualContinuous}` + decorationColors[level]` ┼ `;
+          const padding = this.options.indent - getTerminalLength(underrowHeader);
+  
+          R.push(" ".repeat(padding) + underrowHeader + payload[i]);
+        }else{
+          R.push(header + payload[i]);
+        }
+      }
+      console.log(R.join('\n'));
+    };
+    if(promiseMap.size){
+      const promises:Promise<unknown>[] = [];
+      const promiseStatusMap:Record<string, {
+        'state': "pending"|"resolved"|"rejected",
+        'value'?: unknown
+      }> = {};
+      const handle = () => {
+        const context:CologContext = { stack: [], circularMap: new Map(), promiseMap: new Map() };
+
+        chunk = chunk.replace(/\x1B\[\d+p/g, v => {
+          const status = promiseStatusMap[v];
+
+          switch(status?.state){
+            case "pending": return col.lBlack`(pending)`;
+            case "resolved": return col.lBlack`(resolved)\n` + toCologString(status.value, context);
+            case "rejected": return col.red`(rejected)\n` + toCologString(status.value, context);
+            default: return col.red`(unknown)`;
+          }
+        });
+        render();
+      };
+
+      for(const [ k, v ] of promiseMap.entries()){
+        promiseStatusMap[v] = { state: "pending" };
+        promises.push(k.then(
+          res => { promiseStatusMap[v].state = "resolved"; promiseStatusMap[v].value = res; },
+          res => { promiseStatusMap[v].state = "rejected"; promiseStatusMap[v].value = res; }
+        ));
+      }
+      Promise.race([ ...promiseMap.keys(), Promise.resolve() ]).then(handle, handle);
+    }else{
+      render();
+    }
   }
 
   public setOptions(options:Partial<LoggerOptions>):this{

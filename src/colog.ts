@@ -1,6 +1,5 @@
 /* eslint-disable @daldalso/sort-keys */
 import { CologStyle } from "./types";
-import { interpolate } from "./utilities";
 
 export type CologInterpolator = ((chunk:TemplateStringsArray, ...args:any[]) => string)&{
   [key in StyleKey]: CologInterpolator
@@ -33,8 +32,13 @@ class CologUnit{
   }
   public wrap(chunk:TemplateStringsArray, ...args:any[]):string{
     const styles = this.styles.join(';');
-    const payload = interpolate(chunk, args).replace(/\x1B\[0m/g, `\x1B[${styles}m`);
+    let payload = "";
 
+    for(let i = 0; i < chunk.length; i++){
+      if(i in chunk) payload += chunk[i];
+      if(i in args) payload += args[i];
+    }
+    payload = payload.replace(/\x1B\[0m/g, `\x1B[${styles}m`);
     return `\x1B[${styles}m${payload}\x1B[0m`;
   }
 }
