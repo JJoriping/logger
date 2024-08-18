@@ -1,3 +1,5 @@
+import type col from "./colog";
+
 export type DeepPartial<T> = T extends {}
   ? { [key in keyof T]?: DeepPartial<T[key]> }
   : T
@@ -11,8 +13,21 @@ export enum LogLevel{
 }
 export type LoggerOptions = {
   'headings': Record<LogLevel, string>,
-  'colored': boolean,
+  /**
+   * The format string of the header for each logged value.
+   * 
+   * You can use the variables below.
+   * 
+   * | Variable | Description |
+   * |:--------:|-------------|
+   * | `$H`     | Heading     |
+   * | `$T`     | Timestamp   |
+   * 
+   * @default "$H $T "
+   */
+  'headerFormat': string,
   'indent': number,
+  'decorationColors': Record<LogLevel, Array<keyof typeof col>>,
   'styles': {
     'functionBodyMaxLength': number,
     'inlineArrayMaxLength': number
@@ -26,6 +41,17 @@ export type LoggerOptions = {
     'maxDepth': number
   }
 };
+export type SubscriptionInfo = {
+  'id': number,
+  'callback': Subscriber,
+  'options': {
+    'colored': boolean
+  }
+};
+export interface Subscriber{
+  (value:string):void;
+  destructor?:() => void;
+}
 export enum CologStyle{
   DEFAULT,
   BOLD,

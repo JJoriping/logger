@@ -1,18 +1,14 @@
-import col, { CologInterpolator } from "./colog";
-import toCologString, { CologContext } from "./to-colog-string";
-import type { DeepPartial, LoggerOptions } from "./types";
+/* eslint-disable @daldalso/sort-keys */
+import type { CologInterpolator } from "./colog";
+import col from "./colog";
+import type { CologContext } from "./to-colog-string";
+import toCologString from "./to-colog-string";
+import type { DeepPartial, LoggerOptions, Subscriber, SubscriptionInfo } from "./types";
 import { LogLevel } from "./types";
 import { deepAssign, getTerminalLength, isTemplateStringsArray } from "./utilities";
 
 type LogFunction = (...args:any[]) => Record<string, LogFunction>;
 
-const decorationColors:Record<LogLevel, CologInterpolator> = {
-  [LogLevel.VERBOSE]: col.lBlack,
-  [LogLevel.INFO]: col.lBlack,
-  [LogLevel.SUCCESS]: col.green,
-  [LogLevel.WARNING]: col.yellow,
-  [LogLevel.ERROR]: col.red
-}
 const noContinuousKeySymbol = Symbol("No continuous key");
 
 export default class Logger{
@@ -24,8 +20,15 @@ export default class Logger{
       [LogLevel.WARNING]: col.bgYellow`!`,
       [LogLevel.ERROR]: col.white.bgRed`X`
     },
-    colored: true,
+    headerFormat: "$H $T ",
     indent: 27,
+    decorationColors: {
+      [LogLevel.VERBOSE]: [ "lBlack" ],
+      [LogLevel.INFO]: [ "lBlack" ],
+      [LogLevel.SUCCESS]: [ "green" ],
+      [LogLevel.WARNING]: [ "yellow" ],
+      [LogLevel.ERROR]: [ "red" ]
+    },
     styles: {
       functionBodyMaxLength: 50,
       inlineArrayMaxLength: 100,
@@ -36,11 +39,15 @@ export default class Logger{
       arrayBufferMaxLength: 1024,
       stringTailLength: 10,
       arrayBufferTailLength: 16,
-      maxDepth: 3,
+      maxDepth: 3
     }
   };
   public static readonly instance = new Logger({});
+  static{
+    Logger.instance.subscribe(console.log, { colored: true });
+  }
 
+  private readonly subscriptions:Record<number, SubscriptionInfo> = {};
   private readonly proxiedVerbose = this.getProxiedLogFunction(LogLevel.VERBOSE);
   private readonly proxiedInfo = this.getProxiedLogFunction(LogLevel.INFO);
   private readonly proxiedSuccess = this.getProxiedLogFunction(LogLevel.SUCCESS);
@@ -53,28 +60,36 @@ export default class Logger{
   public readonly error = this.proxiedError[noContinuousKeySymbol];
   public readonly options:LoggerOptions;
 
-  constructor(options:Partial<LoggerOptions>){
-    this.options = {...Logger.defaultOptions};
-    for(const [ k, v ] of Object.entries(options)){
-      if(v === undefined) continue;
-      Object.assign(this.options, { [k]: v });
-    }
+  private subscriptionIdCounter:number = 0;
+
+  public constructor(options:DeepPartial<LoggerOptions>){
+    this.options = deepAssign(structuredClone(Logger.defaultOptions), options);
   }
-  private getProxiedLogFunction(level:LogLevel){
+  private getProxiedLogFunction(level:LogLevel):Record<string|symbol, LogFunction>{
     return new Proxy<Record<string|symbol, LogFunction>>({}, {
       get: (_, key) => {
         const continuous = key === noContinuousKeySymbol ? undefined : typeof key === "symbol" ? key.description : key;
-  
+
         return (...args:any[]) => {
           this.log(level, args, continuous);
           return this.proxiedVerbose;
         };
-      },
+      }
     });
   }
   private log(level:LogLevel, args:any[], continuous?:string|null):void{
     const [ template, ...rest ] = args;
-    const header = `${this.options.headings[level]} ${decorationColors[level]`${new Date().toJSON()}`} `;
+    const decorationColor = this.options.decorationColors[level].reduce((pv, v) => pv[v], col) as CologInterpolator;
+    const headerVariables:Record<string, string> = {
+      H: this.options.headings[level],
+      T: decorationColor`${new Date().toJSON()}`
+    };
+    const header = this.options.headerFormat.replace(/\$(\w+)\b/g, (_, g1) => {
+      if(!(g1 in headerVariables)){
+        throw Error(`Unknown header variable: ${g1}`);
+      }
+      return headerVariables[g1];
+    });
     if(!isTemplateStringsArray(template)){
       ((_:TemplateStringsArray) => {
         if(!args.length) args.push(col.lBlack`(empty)`);
@@ -97,23 +112,23 @@ export default class Logger{
       }
     }
     const render = () => {
-      const payload = chunk.split("\n");
+      const payload = chunk.split('\n');
       const R:string[] = [];
-  
+
       for(let i = 0; i < payload.length; i++){
         if(i){
-          const underrowHeader = decorationColors[level]`${(i + 1).toString()} │ `;
+          const underrowHeader = decorationColor`${(i + 1).toString()} │ `;
           const padding = Math.max(0, this.options.indent - getTerminalLength(underrowHeader));
-  
+
           R.push(" ".repeat(padding) + underrowHeader + payload[i]);
         }else if(continuous){
           let actualContinuous = continuous;
           if(actualContinuous.length + 5 > this.options.indent){
             actualContinuous = actualContinuous.slice(0, this.options.indent - 6) + "…";
           }
-          const underrowHeader = col.bold`${actualContinuous}` + decorationColors[level]` ┼ `;
+          const underrowHeader = col.bold`${actualContinuous}` + decorationColor` ┼ `;
           const padding = this.options.indent - getTerminalLength(underrowHeader);
-  
+
           R.push(" ".repeat(padding) + underrowHeader + payload[i]);
         }else{
           R.push(header + payload[i]);
@@ -122,7 +137,7 @@ export default class Logger{
       this.print(R.join('\n'));
     };
     if(promiseMap.size){
-      const promises:Promise<unknown>[] = [];
+      const promises:Array<Promise<unknown>> = [];
       const promiseStatusMap:Record<string, {
         'state': "pending"|"resolved"|"rejected",
         'value'?: unknown
@@ -146,8 +161,12 @@ export default class Logger{
       for(const [ k, v ] of promiseMap.entries()){
         promiseStatusMap[v] = { state: "pending" };
         promises.push(k.then(
-          res => { promiseStatusMap[v].state = "resolved"; promiseStatusMap[v].value = res; },
-          res => { promiseStatusMap[v].state = "rejected"; promiseStatusMap[v].value = res; }
+          res => {
+            promiseStatusMap[v].state = "resolved"; promiseStatusMap[v].value = res;
+          },
+          error => {
+            promiseStatusMap[v].state = "rejected"; promiseStatusMap[v].value = error;
+          }
         ));
       }
       Promise.race([ ...promiseMap.keys(), Promise.resolve() ]).then(handle, handle);
@@ -156,13 +175,28 @@ export default class Logger{
     }
   }
   private print(value:string):void{
-    let actualValue = value;
-    if(!this.options.colored){
-      actualValue = actualValue.replace(/\x1B\[.+?m/g, "");
+    for(const v of Object.values(this.subscriptions)){
+      let actualValue = value;
+      if(!v.options.colored){
+        actualValue = actualValue.replace(/\x1B\[.+?m/g, "");
+      }
+      v.callback(actualValue);
     }
-    console.log(actualValue);
   }
 
+  public subscribe(callback:Subscriber, options:SubscriptionInfo['options']):SubscriptionInfo{
+    const id = ++this.subscriptionIdCounter;
+
+    return this.subscriptions[id] = {
+      id,
+      callback,
+      options
+    };
+  }
+  public unsubscribe(id:number):void{
+    this.subscriptions[id]?.callback.destructor?.();
+    delete this.subscriptions[id];
+  }
   public setOptions(options:DeepPartial<LoggerOptions>):this{
     deepAssign(this.options, options);
     return this;

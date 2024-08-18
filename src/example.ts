@@ -1,6 +1,8 @@
 /* eslint-disable @daldalso/multiline-expression-spacing */
 import col from "./colog";
 import Logger, { error, info, log, success, warning } from "./logger";
+import { createDirectorySubscriber, createFileSubscriber } from "./subscribers";
+import { LogLevel } from "./types";
 
 // Log levels
 {
@@ -72,6 +74,24 @@ import Logger, { error, info, log, success, warning } from "./logger";
     log(promise1, promise2, promise3);
   });
 }
+
+// Tooling & styling
+{
+  const logger = new Logger({
+    headings: {
+      [LogLevel.VERBOSE]: col.bgLBlack` LOG `
+    },
+    headerFormat: `${col.magenta`main`}: $H `,
+    indent: 12
+  });
+  logger.subscribe(console.log, { colored: true });
+  logger.subscribe(createFileSubscriber("./example.log"), { colored: false });
+  logger.subscribe(createDirectorySubscriber("./logs", { type: "size", maxBytes: 500 }), { colored: false });
+  logger.verbose("Hello, World!", new Date());
+}
+global.setTimeout(() => {
+  process.exit();
+}, 100);
 
 function foo(bar:number):number{
   return bar ** 2;
