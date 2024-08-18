@@ -1,8 +1,8 @@
 import col, { CologInterpolator } from "./colog";
 import toCologString, { CologContext } from "./to-colog-string";
-import type { LoggerOptions } from "./types";
+import type { DeepPartial, LoggerOptions } from "./types";
 import { LogLevel } from "./types";
-import { getTerminalLength, isTemplateStringsArray } from "./utilities";
+import { deepAssign, getTerminalLength, isTemplateStringsArray } from "./utilities";
 
 type LogFunction = (...args:any[]) => Record<string, LogFunction>;
 
@@ -26,6 +26,18 @@ export default class Logger{
     },
     colored: true,
     indent: 27,
+    styles: {
+      functionBodyMaxLength: 50,
+      inlineArrayMaxLength: 100,
+      inlineObjectMaxLength: 100,
+      arrayMaxItemCount: 100,
+      objectMaxItemCount: 100,
+      stringMaxLength: 5000,
+      arrayBufferMaxLength: 1024,
+      stringTailLength: 10,
+      arrayBufferTailLength: 16,
+      maxDepth: 3,
+    }
   };
   public static readonly instance = new Logger({});
 
@@ -81,7 +93,7 @@ export default class Logger{
     for(let i = 0; i < template.length; i++){
       if(i in template) chunk += template[i];
       if(i in rest){
-        chunk += toCologString(rest[i], { circularMap: new Map(), stack: [], promiseMap });
+        chunk += toCologString(rest[i], { circularMap: new Map(), stack: [], promiseMap, styles: this.options.styles });
       }
     }
     const render = () => {
@@ -107,7 +119,7 @@ export default class Logger{
           R.push(header + payload[i]);
         }
       }
-      console.log(R.join('\n'));
+      this.print(R.join('\n'));
     };
     if(promiseMap.size){
       const promises:Promise<unknown>[] = [];
@@ -116,7 +128,7 @@ export default class Logger{
         'value'?: unknown
       }> = {};
       const handle = () => {
-        const context:CologContext = { stack: [], circularMap: new Map(), promiseMap: new Map() };
+        const context:CologContext = { stack: [], circularMap: new Map(), promiseMap: new Map(), styles: this.options.styles };
 
         chunk = chunk.replace(/\x1B\[\d+p/g, v => {
           const status = promiseStatusMap[v];
@@ -143,9 +155,16 @@ export default class Logger{
       render();
     }
   }
+  private print(value:string):void{
+    let actualValue = value;
+    if(!this.options.colored){
+      actualValue = actualValue.replace(/\x1B\[.+?m/g, "");
+    }
+    console.log(actualValue);
+  }
 
-  public setOptions(options:Partial<LoggerOptions>):this{
-    Object.assign(this.options, options);
+  public setOptions(options:DeepPartial<LoggerOptions>):this{
+    deepAssign(this.options, options);
     return this;
   }
 }

@@ -1,20 +1,11 @@
 import col from "./colog";
-
-const functionBodyMaxLength = 50;
-const inlineArrayMaxLength = 100;
-const inlineObjectMaxLength = 100;
-const arrayMaxItemCount = 100;
-const objectMaxItemCount = 100;
-const stringMaxLength = 5000;
-const arrayBufferMaxLength = 1024;
-const stringTailLength = 10;
-const arrayBufferTailLength = 16;
-const maxDepth = 3;
+import type { LoggerOptions } from "./types";
 
 export type CologContext = {
   'circularMap': Map<object, string>,
   'stack': object[],
-  'promiseMap': Map<Promise<unknown>, string>
+  'promiseMap': Map<Promise<unknown>, string>,
+  'styles': LoggerOptions['styles']
 };
 export default function toCologString(
   object:any,
@@ -27,6 +18,7 @@ export default function toCologString(
     context.circularMap.set(object, label);
     return col.bold.lMagenta`→${label}`;
   }
+  const { functionBodyMaxLength, inlineArrayMaxLength, inlineObjectMaxLength, arrayMaxItemCount, objectMaxItemCount, stringMaxLength, arrayBufferMaxLength, stringTailLength, arrayBufferTailLength, maxDepth } = context.styles;
   const stackOverflowed = context.stack.length >= maxDepth;
   let isObject = false;
 
@@ -244,7 +236,8 @@ export default function toCologString(
     return {
       circularMap: context.circularMap,
       stack: [ ...context.stack, target ],
-      promiseMap: context.promiseMap
+      promiseMap: context.promiseMap,
+      styles: context.styles
     };
   }
 }

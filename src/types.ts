@@ -1,3 +1,7 @@
+export type DeepPartial<T> = T extends {}
+  ? { [key in keyof T]?: DeepPartial<T[key]> }
+  : T
+;
 export enum LogLevel{
   VERBOSE,
   INFO,
@@ -8,9 +12,20 @@ export enum LogLevel{
 export type LoggerOptions = {
   'headings': Record<LogLevel, string>,
   'colored': boolean,
-  'indent': number
+  'indent': number,
+  'styles': {
+    'functionBodyMaxLength': number,
+    'inlineArrayMaxLength': number
+    'inlineObjectMaxLength': number
+    'arrayMaxItemCount': number
+    'objectMaxItemCount': number
+    'stringMaxLength': number
+    'arrayBufferMaxLength': number
+    'stringTailLength': number
+    'arrayBufferTailLength': number
+    'maxDepth': number
+  }
 };
-
 export enum CologStyle{
   DEFAULT,
   BOLD,
