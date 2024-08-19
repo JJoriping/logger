@@ -1,6 +1,7 @@
 /* eslint-disable @daldalso/sort-keys */
 import type { CologInterpolator } from "./colog";
 import col from "./colog";
+import { createStandardSubscriber } from "./subscribers";
 import type { CologContext } from "./to-colog-string";
 import toCologString from "./to-colog-string";
 import type { DeepPartial, LoggerOptions, Subscriber, SubscriptionInfo } from "./types";
@@ -17,7 +18,7 @@ export default class Logger{
       [LogLevel.VERBOSE]: "·",
       [LogLevel.INFO]: col.cyan`i`,
       [LogLevel.SUCCESS]: col.green`✓`,
-      [LogLevel.WARNING]: col.bgYellow`!`,
+      [LogLevel.WARNING]: col.black.bgYellow`!`,
       [LogLevel.ERROR]: col.white.bgRed`X`
     },
     headerFormat: "$H $T ",
@@ -44,7 +45,7 @@ export default class Logger{
   };
   public static readonly instance = new Logger({});
   static{
-    Logger.instance.subscribe(console.log, { colored: true });
+    Logger.instance.addSubscriber(createStandardSubscriber(), { colored: true });
   }
 
   private readonly subscriptions:Record<number, SubscriptionInfo> = {};
@@ -134,7 +135,7 @@ export default class Logger{
           R.push(header + payload[i]);
         }
       }
-      this.print(R.join('\n'));
+      this.print(level, R.join('\n'));
     };
     if(promiseMap.size){
       const promises:Array<Promise<unknown>> = [];
@@ -174,17 +175,17 @@ export default class Logger{
       render();
     }
   }
-  private print(value:string):void{
+  private print(level:LogLevel, value:string):void{
     for(const v of Object.values(this.subscriptions)){
       let actualValue = value;
       if(!v.options.colored){
         actualValue = actualValue.replace(/\x1B\[.+?m/g, "");
       }
-      v.callback(actualValue);
+      v.callback(level, actualValue);
     }
   }
 
-  public subscribe(callback:Subscriber, options:SubscriptionInfo['options']):SubscriptionInfo{
+  public addSubscriber(callback:Subscriber, options:SubscriptionInfo['options']):SubscriptionInfo{
     const id = ++this.subscriptionIdCounter;
 
     return this.subscriptions[id] = {
@@ -193,7 +194,7 @@ export default class Logger{
       options
     };
   }
-  public unsubscribe(id:number):void{
+  public removeSubscriber(id:number):void{
     this.subscriptions[id]?.callback.destructor?.();
     delete this.subscriptions[id];
   }

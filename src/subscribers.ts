@@ -1,7 +1,7 @@
 import type { WriteStream } from "fs";
 import { createWriteStream, existsSync, mkdirSync } from "fs";
 import { resolve } from "path";
-import type { Subscriber } from "./types";
+import { LogLevel, type Subscriber } from "./types";
 
 type DirectorySubscriberStrategy = ({
   'type': "size",
@@ -10,6 +10,9 @@ type DirectorySubscriberStrategy = ({
   'type': "time",
   'interval': "hourly"|"daily"|"weekly"|"monthly"|"yearly"
 })&{
+  /**
+   * @deprecated Not yet implemented!
+   */
   'compressFormerLogs'?: boolean,
   /**
    * @default 10000
@@ -24,9 +27,19 @@ const dateKeyByInterval:Record<string, (date:Date) => number> = {
   yearly: date => date.getFullYear()
 };
 
+export function createStandardSubscriber():Subscriber{
+  return (level, value) => {
+    switch(level){
+      case LogLevel.ERROR: console.error(value); break;
+      case LogLevel.WARNING: console.warn(value); break;
+      case LogLevel.INFO: console.info(value); break;
+      default: console.log(value); break;
+    }
+  };
+}
 export function createFileSubscriber(path:string):Subscriber{
   const stream = createWriteStream(path, { flags: "a" });
-  const R:Subscriber = value => {
+  const R:Subscriber = (_, value) => {
     stream.write(value);
     stream.write("\n");
   };
@@ -64,7 +77,7 @@ export function createDirectorySubscriber(path:string, strategy:DirectorySubscri
       }, checkInterval);
       break;
   }
-  const R:Subscriber = value => {
+  const R:Subscriber = (_, value) => {
     stream.write(value);
     stream.write("\n");
   };

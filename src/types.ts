@@ -49,7 +49,7 @@ export type SubscriptionInfo = {
   }
 };
 export interface Subscriber{
-  (value:string):void;
+  (level:LogLevel, value:string):void;
   destructor?:() => void;
 }
 export enum CologStyle{

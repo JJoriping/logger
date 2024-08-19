@@ -84,9 +84,9 @@ import { LogLevel } from "./types";
     headerFormat: `${col.magenta`main`}: $H `,
     indent: 12
   });
-  logger.subscribe(console.log, { colored: true });
-  logger.subscribe(createFileSubscriber("./example.log"), { colored: false });
-  logger.subscribe(createDirectorySubscriber("./logs", { type: "size", maxBytes: 500 }), { colored: false });
+  logger.addSubscriber(console.log, { colored: true });
+  logger.addSubscriber(createFileSubscriber("./example.log"), { colored: false });
+  logger.addSubscriber(createDirectorySubscriber("./logs", { type: "size", maxBytes: 500 }), { colored: false });
   logger.verbose("Hello, World!", new Date());
 }
 global.setTimeout(() => {

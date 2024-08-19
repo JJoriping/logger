@@ -44,7 +44,7 @@ export default function toCologString(
       return col.yellow`${object}n`;
     case "symbol": return col.green`Symbol(${object.description ?? ""})`;
     case "function": {
-      const name = (object as Function).name ?? "";
+      let name = (object as Function).name ?? "";
       const string = (object as Function).toString();
       let type:string;
       let chunk:RegExpMatchArray|null;
@@ -56,7 +56,7 @@ export default function toCologString(
         type = "normal";
         args = chunk[1];
         body = chunk[2];
-      }else if(chunk = string.match(/^\((.*?)\)\s*=>\s*([\S\s]+)$/)){
+      }else if(chunk = string.match(/^\(?(.*?)\)?\s*=>\s*([\S\s]+)$/)){
         type = "arrow";
         args = chunk[1];
         body = chunk[2];
@@ -70,7 +70,12 @@ export default function toCologString(
       body = body?.replace(/^\s+|[\n\r]|\s+$/g, "").replace(/\s{2,}/g, " ");
 
       switch(type){
-        case "normal": R = col.cyan`function ${name}(${args})`; break;
+        case "normal":
+          if(name === "bound "){
+            name = `bound ${col.lBlack`<anonymous>`}`;
+          }
+          R = col.cyan`function ${name}(${args})`;
+          break;
         case "arrow": R = col.cyan`(${args}) => `; break;
         case "class": R = col.cyan`class ${name}`; break;
         default: R = col.cyan`(unknown function)`; break;
@@ -167,7 +172,7 @@ export default function toCologString(
       }
       body += "\n]";
     }
-    if(circularLabel = context.circularMap.get(actualObject)){
+    if(circularLabel = context.circularMap.get(object)){
       body = col.bold.lMagenta`${circularLabel}` + body;
     }
     return body;
@@ -225,7 +230,7 @@ export default function toCologString(
     if(Symbol.toStringTag in object){
       body = col.lCyan`${object[Symbol.toStringTag]} ` + body;
     }
-    if(circularLabel = context.circularMap.get(actualObject)){
+    if(circularLabel = context.circularMap.get(object)){
       body = col.bold.lMagenta`${circularLabel}` + body;
     }
     return body;
