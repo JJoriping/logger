@@ -1,5 +1,5 @@
 /* eslint-disable @daldalso/sort-keys */
-import { CologStyle } from "./types";
+import { CologStyle } from "./types.js";
 
 export type CologInterpolator = ((chunk:TemplateStringsArray, ...args:any[]) => string)&{
   [key in StyleKey]: CologInterpolator

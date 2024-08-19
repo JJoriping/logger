@@ -1,8 +1,8 @@
 {
+  "type": "module",
   "name": "@daldalso/logger",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Fancy logging library using tagged template literal",
-  "main": "./dist/index.js",
   "repository": {
     "url": "git+https://github.com/JJoriping/logger.git"
   },
@@ -17,6 +17,14 @@
     "/README.md",
     "/dist/"
   ],
+  "exports": {
+    ".": {
+      "default": "./dist/index.js"
+    },
+    "./subscribers/*": {
+      "default": "./dist/subscribers/*"
+    }
+  },
   "devDependencies": {
     "@daldalso/eslint-plugin": "^1.2.3",
     "@types/node": "^22.4.0",

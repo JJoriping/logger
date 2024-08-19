@@ -2,7 +2,7 @@ import type { WriteStream } from "fs";
 import { createReadStream, createWriteStream, existsSync, mkdirSync, rm } from "fs";
 import { resolve } from "path";
 import { createGzip } from "zlib";
-import { LogLevel, type Subscriber } from "./types";
+import type { Subscriber } from "../types.js";
 
 type DirectorySubscriberStrategy = ({
   'type': "size",
@@ -25,27 +25,6 @@ const dateKeyByInterval:Record<string, (date:Date) => number> = {
   yearly: date => date.getFullYear()
 };
 
-export function createStandardSubscriber():Subscriber{
-  return (level, value) => {
-    switch(level){
-      case LogLevel.ERROR: console.error(value); break;
-      case LogLevel.WARNING: console.warn(value); break;
-      case LogLevel.INFO: console.info(value); break;
-      default: console.log(value); break;
-    }
-  };
-}
-export function createFileSubscriber(path:string):Subscriber{
-  const stream = createWriteStream(path, { flags: "a" });
-  const R:Subscriber = (_, value) => {
-    stream.write(value);
-    stream.write("\n");
-  };
-  R.destructor = () => {
-    stream.end();
-  };
-  return R;
-}
 export function createDirectorySubscriber(path:string, strategy:DirectorySubscriberStrategy):Subscriber{
   if(!existsSync(path)){
     mkdirSync(path);

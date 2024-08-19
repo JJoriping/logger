@@ -1,12 +1,12 @@
 /* eslint-disable @daldalso/sort-keys */
-import type { CologInterpolator } from "./colog";
-import col from "./colog";
-import { createStandardSubscriber } from "./subscribers";
-import type { CologContext } from "./to-colog-string";
-import toCologString from "./to-colog-string";
-import type { DeepPartial, LoggerOptions, Subscriber, SubscriptionInfo } from "./types";
-import { LogLevel } from "./types";
-import { deepAssign, getTerminalLength, isTemplateStringsArray } from "./utilities";
+import type { CologInterpolator } from "./colog.js";
+import col from "./colog.js";
+import createStandardSubscriber from "./subscribers/standard.js";
+import type { CologContext } from "./to-colog-string.js";
+import toCologString from "./to-colog-string.js";
+import type { DeepPartial, LoggerOptions, Subscriber, SubscriptionInfo } from "./types.js";
+import { LogLevel } from "./types.js";
+import { deepAssign, getTerminalLength, isTemplateStringsArray } from "./utilities.js";
 
 type LogFunction = (...args:any[]) => Record<string, LogFunction>;
 

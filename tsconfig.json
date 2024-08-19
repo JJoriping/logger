@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "commonjs",
+    "target": "ES2022",
+    "module": "ES2022",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
@@ -9,9 +9,6 @@
     
     "rootDir": "./src/",
     "outDir": "./dist/",
-    "paths": {
-      "@/*": [ "./src/*" ]
-    },
     "declaration": true
   }
 }

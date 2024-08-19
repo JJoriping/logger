@@ -1,5 +1,5 @@
-import col from "./colog";
-import type { LoggerOptions } from "./types";
+import col from "./colog.js";
+import type { LoggerOptions } from "./types.js";
 
 export type CologContext = {
   'circularMap': Map<object, string>,

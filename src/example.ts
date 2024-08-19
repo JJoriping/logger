@@ -1,8 +1,9 @@
 /* eslint-disable @daldalso/multiline-expression-spacing */
-import col from "./colog";
-import Logger, { error, info, log, success, warning } from "./logger";
-import { createDirectorySubscriber, createFileSubscriber } from "./subscribers";
-import { LogLevel } from "./types";
+import col from "./colog.js";
+import Logger, { error, info, log, success, warning } from "./logger.js";
+import { createDirectorySubscriber } from "./subscribers/directory.js";
+import createFileSubscriber from "./subscribers/file.js";
+import { LogLevel } from "./types.js";
 
 // Log levels
 {

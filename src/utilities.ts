@@ -1,4 +1,4 @@
-import type { DeepPartial } from "./types";
+import type { DeepPartial } from "./types.js";
 
 export function getTerminalLength(value:string):number{
   return value.replace(/\x1B\[.+?m/g, "").length;

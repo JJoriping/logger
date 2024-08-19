@@ -1,4 +1,4 @@
-import type col from "./colog";
+import type col from "./colog.js";
 
 export type DeepPartial<T> = T extends {}
   ? { [key in keyof T]?: DeepPartial<T[key]> }
