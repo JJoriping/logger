@@ -35,8 +35,7 @@ There are 36 styles of decorating text and you can call `col` to use them.
 ![Example of col](res/example-col.png)
 
 ```js
-import col from "./colog";
-import { log } from "./logger";
+import { col, log } from "@daldalso/logger";
 
 log(col.red`Red`);
 log(col.bgBlue`Blue`);
@@ -47,8 +46,7 @@ You can make a call chain to apply multiple styles.
 ![Example of col chain](res/example-col-chain.png)
 
 ```js
-import col from "./colog";
-import { log } from "./logger";
+import { col, log } from "@daldalso/logger";
 
 log(col.italic.green`Italic and green`);
 log("🚗💨 " + col.yellow.bgLBlack.underline`─────`);
@@ -69,7 +67,7 @@ Most of object types are handled for better appearance.
 ![Example of values](res/example-values.png)
 
 ```js
-import { log } from "./logger";
+import { log } from "@daldalso/logger";
 
 log([ 1, 2, 3 ]);
 log(new Map([ [ "foo", /bar/g ], [ log, true ] ]));
@@ -88,7 +86,7 @@ Object with circular references is marked as below:
 ![Example of circular reference](res/example-circular.png)
 
 ```js
-import { log } from "./logger";
+import { log } from "@daldalso/logger";
 
 const circularObject = { foo: 1 };
 circularObject.this = circularObject;
@@ -105,7 +103,7 @@ When you call Logger with multiple arguments, it labels each argument with numbe
 ![Example of labeling](res/example-label.png)
 
 ```js
-import { log } from "./logger";
+import { log } from "@daldalso/logger";
 
 log("foo", "bar", "baz");
 ```
@@ -115,7 +113,7 @@ You can set the name of labels by calling any properties of its return value.
 ![Example of setting label name](res/example-label-name.png)
 
 ```js
-import { warning } from "./logger";
+import { warning } from "@daldalso/logger";
 
 warning("Loading is too long!").Task("Deleting redundant files")['⏱️']("100 seconds");
 ```
@@ -128,7 +126,7 @@ because the default options makes Logger print timestamps which are distracting 
 ![Example of styling](res/example-style.png)
 
 ```js
-import Logger, { info, log } from "./logger";
+import { Logger, info, log } from "@daldalso/logger";
 
 Logger.instance.setOptions({
   headings: {
@@ -146,7 +144,7 @@ info("How are you?");
 Logger calls `console.log` by default, but you can change this behavior with its subscription methods.
 
 ```js
-import Logger, { log } from "./logger";
+import { Logger, log } from "@daldalso/logger";
 
 Logger.instance.removeSubscriber(1); // Removes default subscriber
 Logger.instance.addSubscriber(
@@ -159,8 +157,7 @@ log("Hello, World!"); // This will be printed to stderr.
 There are some functions that return a subscriber.
 
 ```js
-import Logger, { log } from "./logger";
-import { createDirectorySubscriber } from "./subscribers";
+import { Logger, log, createDirectorySubscriber } from "@daldalso/logger";
 
 Logger.instance.addSubscriber(
   createDirectorySubscriber("logs", { type: "time", interval: "daily" }),
@@ -174,8 +171,7 @@ You can instantiate Logger to apply different configuration.
 Note that the instantiated Logger does not have any subscribers, which means you have to add one before logging with it.
 
 ```js
-import Logger from "./logger";
-import { createFileSubscriber } from "./subscribers";
+import { Logger, createFileSubscriber } from "@daldalso/logger";
 
 const fileLogger = new Logger({
   headerFormat: "$H "
