@@ -1,6 +1,7 @@
 import type { WriteStream } from "fs";
-import { createWriteStream, existsSync, mkdirSync } from "fs";
+import { createReadStream, createWriteStream, existsSync, mkdirSync, rm } from "fs";
 import { resolve } from "path";
+import { createGzip } from "zlib";
 import { LogLevel, type Subscriber } from "./types";
 
 type DirectorySubscriberStrategy = ({
@@ -10,9 +11,6 @@ type DirectorySubscriberStrategy = ({
   'type': "time",
   'interval': "hourly"|"daily"|"weekly"|"monthly"|"yearly"
 })&{
-  /**
-   * @deprecated Not yet implemented!
-   */
   'compressFormerLogs'?: boolean,
   /**
    * @default 10000
@@ -63,7 +61,6 @@ export function createDirectorySubscriber(path:string, strategy:DirectorySubscri
         if(stream.bytesWritten < strategy.maxBytes){
           return;
         }
-        stream.end();
         switchToNextStream();
       }, checkInterval);
       break;
@@ -72,7 +69,6 @@ export function createDirectorySubscriber(path:string, strategy:DirectorySubscri
         if(currentDateKey === dateKeyByInterval[strategy.interval](new Date())){
           return;
         }
-        stream.end();
         switchToNextStream();
       }, checkInterval);
       break;
@@ -92,6 +88,19 @@ export function createDirectorySubscriber(path:string, strategy:DirectorySubscri
     if(!chunk) throw Error(`Unexpected date format: ${new Date().toJSON()}`);
     const name = chunk[1] + chunk[2] + chunk[3] + "-" + chunk[4] + chunk[5] + chunk[6] + ".log";
 
+    if(stream){
+      stream.end();
+      if(strategy.compressFormerLogs){
+        const readStream = createReadStream(stream.path);
+        const writeStream = createWriteStream(stream.path.toString().replace(/\.log$/, ".zip"));
+        const gzip = createGzip();
+
+        writeStream.once('close', () => {
+          rm(readStream.path, () => {});
+        });
+        readStream.pipe(gzip).pipe(writeStream);
+      }
+    }
     stream = createWriteStream(resolve(path, name), { flags: "a" });
     if(strategy.type === "time"){
       currentDateKey = dateKeyByInterval[strategy.interval](new Date());
