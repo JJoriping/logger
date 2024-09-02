@@ -54,7 +54,7 @@ export default class Logger{
   private readonly proxiedSuccess = this.getProxiedLogFunction(LogLevel.SUCCESS);
   private readonly proxiedWarning = this.getProxiedLogFunction(LogLevel.WARNING);
   private readonly proxiedError = this.getProxiedLogFunction(LogLevel.ERROR);
-  public readonly verbose = this.proxiedVerbose[noContinuousKeySymbol];
+  public readonly log = this.proxiedVerbose[noContinuousKeySymbol];
   public readonly info = this.proxiedInfo[noContinuousKeySymbol];
   public readonly success = this.proxiedSuccess[noContinuousKeySymbol];
   public readonly warning = this.proxiedWarning[noContinuousKeySymbol];
@@ -72,13 +72,13 @@ export default class Logger{
         const continuous = key === noContinuousKeySymbol ? undefined : typeof key === "symbol" ? key.description : key;
 
         return (...args:any[]) => {
-          this.log(level, args, continuous);
+          this.out(level, args, continuous);
           return this.proxiedVerbose;
         };
       }
     });
   }
-  private log(level:LogLevel, args:any[], continuous?:string|null):void{
+  private out(level:LogLevel, args:any[], continuous?:string|null):void{
     const [ template, ...rest ] = args;
     const decorationColor = this.options.decorationColors[level].reduce((pv, v) => pv[v], col) as CologInterpolator;
     const headerVariables:Record<string, string> = {
@@ -96,10 +96,10 @@ export default class Logger{
         if(!args.length) args.push(col.lBlack`(empty)`);
         if(continuous === undefined){
           for(let i = 0; i < args.length; i++){
-            this.log(level, [ _, args[i] ], i ? `#${i + 1}` : null);
+            this.out(level, [ _, args[i] ], i ? `#${i}` : null);
           }
         }else{
-          this.log(level, [ _, args.length <= 1 ? args[0] : args ], continuous);
+          this.out(level, [ _, args.length <= 1 ? args[0] : args ], continuous);
         }
       })``;
       return;
@@ -203,7 +203,7 @@ export default class Logger{
     return this;
   }
 }
-export const log = Logger.instance.verbose.bind(Logger.instance);
+export const log = Logger.instance.log.bind(Logger.instance);
 export const info = Logger.instance.info.bind(Logger.instance);
 export const success = Logger.instance.success.bind(Logger.instance);
 export const warning = Logger.instance.warning.bind(Logger.instance);

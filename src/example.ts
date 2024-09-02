@@ -88,7 +88,7 @@ import { LogLevel } from "./types.js";
   logger.addSubscriber(console.log, { colored: true });
   logger.addSubscriber(createFileSubscriber("./example.log"), { colored: false });
   logger.addSubscriber(createDirectorySubscriber("./logs", { type: "size", maxBytes: 500 }), { colored: false });
-  logger.verbose("Hello, World!", new Date());
+  logger.log("Hello, World!", new Date());
 }
 global.setTimeout(() => {
   process.exit();
