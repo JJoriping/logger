@@ -21,8 +21,7 @@ export default class Logger{
       [LogLevel.WARNING]: col.black.bgYellow`!`,
       [LogLevel.ERROR]: col.white.bgRed`X`
     },
-    headerFormat: "$H $T ",
-    indent: 27,
+    headerFormat: "$H ",
     decorationColors: {
       [LogLevel.VERBOSE]: [ "lBlack" ],
       [LogLevel.INFO]: [ "lBlack" ],
@@ -63,7 +62,7 @@ export default class Logger{
 
   private subscriptionIdCounter:number = 0;
 
-  public constructor(options:DeepPartial<LoggerOptions>){
+  public constructor(options:DeepPartial<LoggerOptions> = {}){
     this.options = deepAssign(structuredClone(Logger.defaultOptions), options);
   }
   private getProxiedLogFunction(level:LogLevel):Record<string|symbol, LogFunction>{
@@ -91,6 +90,7 @@ export default class Logger{
       }
       return headerVariables[g1];
     });
+    const headerLength = getTerminalLength(header);
     if(!isTemplateStringsArray(template)){
       ((_:TemplateStringsArray) => {
         if(!args.length) args.push(col.lBlack`(empty)`);
@@ -115,21 +115,25 @@ export default class Logger{
     const render = () => {
       const payload = chunk.split('\n');
       const R:string[] = [];
+      const indent = this.options.indent ?? headerLength;
 
       for(let i = 0; i < payload.length; i++){
         if(i){
           const underrowHeader = decorationColor`${(i + 1).toString()} │ `;
-          const padding = Math.max(0, this.options.indent - getTerminalLength(underrowHeader));
+          const padding = Math.max(0, indent - getTerminalLength(underrowHeader));
 
           R.push(" ".repeat(padding) + underrowHeader + payload[i]);
         }else if(continuous){
-          let actualContinuous = continuous;
-          if(actualContinuous.length + 5 > this.options.indent){
-            actualContinuous = actualContinuous.slice(0, this.options.indent - 6) + "…";
-          }
-          const underrowHeader = col.bold`${actualContinuous}` + decorationColor` ┼ `;
-          const padding = this.options.indent - getTerminalLength(underrowHeader);
+          let underrowHeader:string;
+          let padding:number;
 
+          if(continuous.length + 5 > indent){
+            underrowHeader = decorationColor`⤷ ` + col.bold`${continuous}` + decorationColor`: `;
+            padding = 0;
+          }else{
+            underrowHeader = col.bold`${continuous}` + decorationColor` ┼ `;
+            padding = indent - getTerminalLength(underrowHeader);
+          }
           R.push(" ".repeat(padding) + underrowHeader + payload[i]);
         }else{
           R.push(header + payload[i]);

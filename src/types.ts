@@ -23,10 +23,17 @@ export type LoggerOptions = {
    * | `$H`     | Heading     |
    * | `$T`     | Timestamp   |
    * 
-   * @default "$H $T "
+   * @default "$H "
    */
   'headerFormat': string,
-  'indent': number,
+  /**
+   * The length of leading spaces of subsequent lines.
+   * 
+   * This value will automatically calculated by `headerFormat` when it's `undefined`.
+   * 
+   * @default undefined
+   */
+  'indent'?: number,
   'decorationColors': Record<LogLevel, Array<keyof typeof col>>,
   'styles': {
     'functionBodyMaxLength': number,
