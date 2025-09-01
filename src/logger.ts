@@ -63,7 +63,11 @@ export default class Logger{
   private subscriptionIdCounter:number = 0;
 
   public constructor(options:DeepPartial<LoggerOptions> = {}){
-    this.options = deepAssign(structuredClone(Logger.defaultOptions), options);
+    // For compatibility, drop structuredClone
+    this.options = deepAssign(
+      JSON.parse(JSON.stringify(Logger.defaultOptions)) as LoggerOptions,
+      options
+    );
   }
   private getProxiedLogFunction(level:LogLevel):Record<string|symbol, LogFunction>{
     return new Proxy<Record<string|symbol, LogFunction>>({}, {

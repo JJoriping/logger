@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@daldalso/logger",
-  "version": "0.9.4-0",
+  "version": "0.9.5",
   "description": "Fancy logging library using tagged template literal",
   "repository": {
     "url": "git+https://github.com/JJoriping/logger.git"
