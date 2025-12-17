@@ -15,7 +15,11 @@ type DirectorySubscriberStrategy = ({
   /**
    * @default 10000
    */
-  'checkInterval'?: number
+  'checkInterval'?: number,
+  /**
+   * Setting this will automatically append `-` before the value.
+   */
+  'suffix'?: string
 };
 const dateKeyByInterval:Record<string, (date:Date) => number> = {
   hourly: date => date.getHours(),
@@ -65,7 +69,10 @@ export function createDirectorySubscriber(path:string, strategy:DirectorySubscri
   function switchToNextStream():void{
     const chunk = new Date().toJSON().match(/^\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.\d{3}Z$/);
     if(!chunk) throw Error(`Unexpected date format: ${new Date().toJSON()}`);
-    const name = chunk[1] + chunk[2] + chunk[3] + "-" + chunk[4] + chunk[5] + chunk[6] + ".log";
+    let name = chunk[1] + chunk[2] + chunk[3] + "-" + chunk[4] + chunk[5] + chunk[6];
+
+    if(strategy.suffix) name += `-${strategy.suffix}`;
+    name += ".log";
 
     if(stream){
       stream.end();
